@@ -312,16 +312,31 @@ export default function App() {
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-2 rounded-xl ${isKosong ? "bg-emerald-500/10" : "bg-rose-500/10"}`}
+                          className={`p-2 rounded-xl ${
+                            isKosong ? "bg-emerald-500/10" : "bg-rose-500/10"
+                          }`}
                         >
                           <Monitor
-                            className={`w-8 h-8 ${isKosong ? "text-emerald-400" : "text-rose-400"}`}
+                            className={`w-8 h-8 ${
+                              isKosong ? "text-emerald-400" : "text-rose-400"
+                            }`}
                           />
                         </div>
-                        <h3 className="font-bold text-xl">{tv.nama_tv}</h3>
+
+                        <div>
+                          <h3 className="font-bold text-xl">{tv.nama_tv}</h3>
+                          <p className="text-sm text-gray-400">
+                            {tv.ip_address}
+                          </p>
+                        </div>
                       </div>
+
                       <div
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wide ${isKosong ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"}`}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold tracking-wide ${
+                          isKosong
+                            ? "bg-emerald-500/20 text-emerald-400"
+                            : "bg-rose-500/20 text-rose-400"
+                        }`}
                       >
                         {tv.status_tv.toUpperCase()}
                       </div>
@@ -359,39 +374,69 @@ export default function App() {
                 </p>
               </div>
             </div>
-            <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-              <div className="flex items-center justify-between mb-6 border-b border-slate-700 pb-4">
-                <h3 className="text-xl font-bold">Antrean Pembayaran Tunai</h3>
-                <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-xs font-bold">
-                  {antreanPending.length} PENDING
+            <div className="lg:col-span-2 bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-xl">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white">
+                    Antrean Pembayaran Tunai
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    Menunggu konfirmasi pembayaran
+                  </p>
+                </div>
+
+                <span className="px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold">
+                  {antreanPending.length} Pending
                 </span>
               </div>
+
               {antreanPending.length === 0 ? (
-                <p className="text-center py-8 text-slate-400">
-                  Bersih, tidak ada antrean.
-                </p>
+                <div className="text-center py-12">
+                  <p className="text-slate-400">
+                    Tidak ada antrean pembayaran saat ini
+                  </p>
+                </div>
               ) : (
-                antreanPending.map((trx) => (
-                  <div
-                    key={trx.id_transaksi}
-                    className="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700 mb-3"
-                  >
-                    <div>
-                      <p className="font-bold text-lg">{trx.id_transaksi}</p>
-                      <p className="text-emerald-400 font-semibold">
-                        Rp {trx.total_bayar.toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() =>
-                        handleKonfirmasiPembayaran(trx.id_transaksi)
-                      }
-                      className="bg-emerald-600 px-4 py-2 rounded-lg font-bold"
+                <div className="space-y-4">
+                  {antreanPending.map((trx) => (
+                    <div
+                      key={trx.id_transaksi}
+                      className="group flex items-center justify-between p-5 rounded-2xl border border-slate-700 bg-slate-900 hover:border-emerald-500/40 hover:bg-slate-850 transition-all duration-300"
                     >
-                      Konfirmasi Lunas
-                    </button>
-                  </div>
-                ))
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-bold text-white text-lg">
+                            #{trx.id_transaksi}
+                          </h4>
+
+                          <span className="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-400 text-xs">
+                            {trx.metode_bayar}
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-slate-400">
+                          Pelanggan:{" "}
+                          <span className="text-slate-200 font-medium">
+                            {trx.id_pelanggan}
+                          </span>
+                        </p>
+
+                        <p className="text-2xl font-bold text-emerald-400">
+                          Rp {trx.total_bayar.toLocaleString("id-ID")}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          handleKonfirmasiPembayaran(trx.id_transaksi)
+                        }
+                        className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-semibold text-white transition-all shadow-lg shadow-emerald-600/20"
+                      >
+                        ✓ Konfirmasi
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
