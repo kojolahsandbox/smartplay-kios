@@ -417,7 +417,7 @@ export default function App() {
                         <p className="text-sm text-slate-400">
                           Pelanggan:{" "}
                           <span className="text-slate-200 font-medium">
-                            {trx.id_pelanggan}
+                            {trx.id_pelanggan} | {trx.id_tv}
                           </span>
                         </p>
 
