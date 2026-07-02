@@ -58,6 +58,15 @@
         .glow {
             box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
         }
+        /* Style Date Input Icons for Dark Mode */
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            opacity: 0.6;
+            cursor: pointer;
+        }
+        ::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="font-sans antialiased min-h-screen flex flex-col">
@@ -113,10 +122,30 @@
         <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             
             <!-- Filter Section -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h2 class="text-xl font-bold flex items-center gap-2">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 bg-gray-800/40 p-4 rounded-xl border border-gray-700/50">
+                <h2 class="text-xl font-bold flex items-center gap-2 shrink-0">
                     <i data-lucide="layout-dashboard" class="w-6 h-6 text-blue-500"></i> Ringkasan Laporan
                 </h2>
+                
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:justify-end">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <i data-lucide="filter" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                        <select id="date-filter-type" onchange="handleFilterChange()" class="w-full sm:w-auto bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm">
+                            <option value="all">Semua Waktu</option>
+                            <option value="today">Hari Ini</option>
+                            <option value="week">Minggu Ini</option>
+                            <option value="month">Bulan Ini</option>
+                            <option value="custom">Pilih Tanggal</option>
+                        </select>
+                    </div>
+                    
+                    <div id="custom-date-container" class="hidden flex items-center gap-2 w-full sm:w-auto">
+                        <input type="date" id="start-date" class="bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm flex-1 sm:flex-none" style="color-scheme: dark;">
+                        <span class="text-gray-400 text-sm">s/d</span>
+                        <input type="date" id="end-date" class="bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm flex-1 sm:flex-none" style="color-scheme: dark;">
+                        <button onclick="applyFilter()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">Cari</button>
+                    </div>
+                </div>
             </div>
 
             <!-- KPI Cards -->
@@ -232,7 +261,7 @@
                 <div class="glass rounded-xl overflow-hidden flex flex-col h-[400px]">
                     <div class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30">
                         <h3 class="text-lg font-semibold flex items-center gap-2">
-                            <i data-lucide="history" class="w-5 h-5 text-green-400"></i> Transaksi Terakhir
+                            <i data-lucide="history" class="w-5 h-5 text-green-400"></i> Riwayat Transaksi
                         </h3>
                     </div>
                     <div class="overflow-y-auto flex-1 p-0">
@@ -272,21 +301,18 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbzH68zbBh0Ga4z7Pg2yU79K5-Es-Gio5UZiJviJcl8ClgUl5vf1gPlAWAu70UEBUqKeUg/exec";
         
         let chartInstances = {};
-        let globalData = { tvs: [], pakets: [], transaksi: [] }; // Menyimpan data mentah dari server agar filter cepat
+        let globalData = { tvs: [], pakets: [], transaksi: [] };
 
         // Utility: Format Rupiah
         const formatRupiah = (number) => {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
         };
 
-        // Utility 1: Isolasi Total Waktu ke WIB (+7)
-        // Mengubah waktu apapun dari Google Sheet (UTC) menjadi Object Date yang nilainya 
-        // sudah memuat nilai WIB mutlak (Mencegah bug zona waktu beda-beda di HP/PC user)
+        // Utility 1: Isolasi Total Waktu ke WIB (+7) untuk Parsing dari GSheet
         const getWIBShifted = (dateStr) => {
             if (!dateStr) return null;
             let str = String(dateStr).trim();
             
-            // Jika format sheet "YYYY-MM-DD HH:MM:SS" (tanpa zona waktu), paksa dibaca sebagai UTC
             if (!str.includes('Z') && !str.includes('+') && !str.includes('T')) {
                 str = str.replace(' ', 'T') + 'Z';
             } else if (str.includes('T') && !str.includes('Z') && !str.includes('+')) {
@@ -295,25 +321,29 @@
 
             let d = new Date(str);
             if (isNaN(d.getTime())) {
-                d = new Date(dateStr); // Fallback jika format aneh
+                d = new Date(dateStr);
                 if (isNaN(d.getTime())) return null;
             }
 
-            // Tambahkan 7 Jam untuk menggeser Epoch Time langsung ke nilai WIB absolut
+            // Tambahkan 7 Jam untuk menggeser Epoch Time
             return new Date(d.getTime() + (7 * 60 * 60 * 1000));
         };
 
-        // Utility 2: Pembaca Kolom Dinamis
+        // Utility 2: Dapatkan Waktu Real-Time WIB Saat Ini
+        const getCurrentWIB = () => {
+            return new Date(Date.now() + (7 * 60 * 60 * 1000));
+        };
+
+        // Utility 3: Pembaca Kolom Dinamis
         const getFlexibleValue = (obj, possibleKeys) => {
             const keys = Object.keys(obj);
             for (let k of keys) {
-                const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, ''); // Hapus spasi & simbol
+                const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, ''); 
                 if (possibleKeys.includes(cleanKey)) return obj[k];
             }
             return null;
         };
 
-        // Utility 3: Format Tanggal yang Aman & Kebal Bug Sorting
         const formatDateTime = (wibDateObj) => {
             if (!wibDateObj || isNaN(wibDateObj.getTime())) return "-";
             let day = String(wibDateObj.getUTCDate()).padStart(2, '0');
@@ -329,7 +359,7 @@
             let y = wibDateObj.getUTCFullYear();
             let m = String(wibDateObj.getUTCMonth() + 1).padStart(2, '0');
             let d = String(wibDateObj.getUTCDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`; // Hasil format pasti "2026-07-02" (Aman untuk disortir pada grafik)
+            return `${y}-${m}-${d}`;
         };
 
         // --- SISTEM LOGIN ---
@@ -341,6 +371,7 @@
                 setTimeout(() => {
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
+                    initDatePickers(); // Inisialisasi tanggal form input default
                     fetchData(); // Load data pertama kali
                 }, 500);
             } else {
@@ -356,6 +387,88 @@
             document.getElementById('passcode').value = '';
         }
 
+        // --- SISTEM FILTER TANGGAL ---
+        function initDatePickers() {
+            const nowWIB = getCurrentWIB();
+            const nowYear = nowWIB.getUTCFullYear();
+            const nowMonth = String(nowWIB.getUTCMonth() + 1).padStart(2, '0');
+            const nowDate = String(nowWIB.getUTCDate()).padStart(2, '0');
+            const nowDateStr = `${nowYear}-${nowMonth}-${nowDate}`;
+            
+            document.getElementById('start-date').value = nowDateStr;
+            document.getElementById('end-date').value = nowDateStr;
+        }
+
+        function handleFilterChange() {
+            const filterType = document.getElementById('date-filter-type').value;
+            const customContainer = document.getElementById('custom-date-container');
+            
+            if (filterType === 'custom') {
+                customContainer.classList.remove('hidden');
+            } else {
+                customContainer.classList.add('hidden');
+                applyFilter();
+            }
+        }
+
+        function applyFilter() {
+            if (!globalData.transaksi) return;
+
+            const filterType = document.getElementById('date-filter-type').value;
+            const startDateInput = document.getElementById('start-date').value;
+            const endDateInput = document.getElementById('end-date').value;
+
+            // Filter Histori Transaksi
+            let filteredTrx = globalData.transaksi.filter(trx => {
+                const dateRaw = getFlexibleValue(trx, ['waktumulai', 'timestamp', 'waktudibuat', 'tanggal']);
+                if (!dateRaw) return true; // Loloskan jika tidak ada field tanggal
+
+                const wibDate = getWIBShifted(dateRaw);
+                if (!wibDate) return true;
+
+                const txTime = wibDate.getTime();
+                const txYear = wibDate.getUTCFullYear();
+                const txMonth = wibDate.getUTCMonth();
+                const txDate = wibDate.getUTCDate();
+                const txDateStr = `${txYear}-${String(txMonth+1).padStart(2,'0')}-${String(txDate).padStart(2,'0')}`;
+
+                const nowWIB = getCurrentWIB();
+                const nowYear = nowWIB.getUTCFullYear();
+                const nowMonth = nowWIB.getUTCMonth();
+                const nowDate = nowWIB.getUTCDate();
+                const nowDateStr = `${nowYear}-${String(nowMonth+1).padStart(2,'0')}-${String(nowDate).padStart(2,'0')}`;
+
+                if (filterType === 'today') {
+                    return txDateStr === nowDateStr;
+                } else if (filterType === 'week') {
+                    // Mulai minggu dari Hari Senin (WIB)
+                    const day = nowWIB.getUTCDay();
+                    const diffToMonday = nowWIB.getUTCDate() - day + (day === 0 ? -6 : 1); 
+                    
+                    const startOfWeek = new Date(nowWIB);
+                    startOfWeek.setUTCDate(diffToMonday);
+                    startOfWeek.setUTCHours(0,0,0,0);
+                    
+                    const endOfWeek = new Date(startOfWeek);
+                    endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+                    endOfWeek.setUTCHours(23,59,59,999);
+                    
+                    return txTime >= startOfWeek.getTime() && txTime <= endOfWeek.getTime();
+                } else if (filterType === 'month') {
+                    return txYear === nowYear && txMonth === nowMonth;
+                } else if (filterType === 'custom') {
+                    if (!startDateInput || !endDateInput) return true;
+                    return txDateStr >= startDateInput && txDateStr <= endDateInput;
+                }
+
+                return true; // value === 'all'
+            });
+
+            // Jalankan UI processor dengan data yang telah difilter 
+            // (Catatan: Status TV tidak difilter berdasarkan waktu karena status TV adalah real-time/saat ini)
+            processDashboardData(globalData.tvs, globalData.pakets, filteredTrx);
+        }
+
         // --- FETCH & PROSES DATA ---
         async function fetchData() {
             const overlay = document.getElementById('loading-overlay');
@@ -368,11 +481,11 @@
                 const response = await fetch(API_URL);
                 const data = await response.json();
                 
-                globalData = data; // Simpan data utuh secara global
-                processDashboardData(globalData.tvs, globalData.pakets, globalData.transaksi); // Render data langsung tanpa filter
+                globalData = data; 
+                applyFilter(); // Eksekusi penyaringan (otomatis panggil processDashboardData)
                 
-                // Update waktu update terakhir menggunakan Waktu Absolut WIB
-                const nowWib = new Date(Date.now() + (7 * 60 * 60 * 1000));
+                // Update label waktu refresh menggunakan Waktu Absolut WIB
+                const nowWib = getCurrentWIB();
                 let h = String(nowWib.getUTCHours()).padStart(2, '0');
                 let m = String(nowWib.getUTCMinutes()).padStart(2, '0');
                 document.getElementById('last-update').innerHTML = `Update terakhir: <span class="font-medium text-white">${h}:${m} WIB</span>`;
@@ -400,7 +513,7 @@
             let paymentMethods = {};
             let dailyRevenue = {};
 
-            // Proses Data Transaksi Terfilter
+            // Proses Data Transaksi (Sudah Terdapat Filter)
             transaksi.forEach(trx => {
                 const statusRaw = getFlexibleValue(trx, ['statusbayar', 'status']);
                 const statusLower = (statusRaw ? String(statusRaw) : '').toLowerCase().trim();
@@ -415,14 +528,12 @@
                 const idPaket = idPaketRaw ? String(idPaketRaw).trim() : 'Unknown';
                 
                 const dateRaw = getFlexibleValue(trx, ['waktumulai', 'timestamp', 'waktudibuat', 'tanggal']);
-                const trxDate = dateRaw ? getWIBShifted(dateRaw) : new Date(Date.now() + (7 * 60 * 60 * 1000));
+                const trxDate = dateRaw ? getWIBShifted(dateRaw) : getCurrentWIB();
                 
-                // KONDISI SUKSES: Termasuk status "Selesai" bersama dengan "Paid"
                 if (statusLower === 'paid' || statusLower === 'sukses' || statusLower === 'selesai') {
                     totalRevenue += total;
                     successTrxCount++;
                     
-                    // Group daily revenue menggunakan SortableKey
                     const dateKey = getSortableDateKey(trxDate);
                     dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + total;
                 }
@@ -439,7 +550,7 @@
             const paketInfo = pakets.find(p => getFlexibleValue(p, ['idpaket', 'id']) == favPaketId);
             if (paketInfo) favPaketName = getFlexibleValue(paketInfo, ['namapaket', 'nama']) || favPaketId;
 
-            // Proses Data TV (Mencegah Bug Kolom Kosong dengan getFlexibleValue dan pembersihan .trim() )
+            // Proses Data TV Status
             let tvTableHTML = '';
             tvs.forEach(tv => {
                 const statusRaw = getFlexibleValue(tv, ['status', 'statustv', 'kondisi']);
@@ -477,9 +588,15 @@
             document.getElementById('kpi-paket-count').textContent = `${favPaketCount}x Dipesan`;
             document.getElementById('tv-table-body').innerHTML = tvTableHTML || '<tr><td colspan="3" class="text-center py-4 text-gray-500">Tidak ada data TV</td></tr>';
 
-            // Render Tabel Transaksi Terakhir
+            // Render Tabel Transaksi Terakhir (Filtered)
             let trxTableHTML = '';
-            const recentTrx = [...transaksi].reverse().slice(0, 15); 
+            // Sort transaksi by date descending untuk tabel history
+            const sortedTrx = [...transaksi].sort((a, b) => {
+                const dateA = getWIBShifted(getFlexibleValue(a, ['waktumulai', 'timestamp', 'waktudibuat'])) || new Date(0);
+                const dateB = getWIBShifted(getFlexibleValue(b, ['waktumulai', 'timestamp', 'waktudibuat'])) || new Date(0);
+                return dateB - dateA;
+            });
+            const recentTrx = sortedTrx.slice(0, 15); 
             
             recentTrx.forEach(trx => {
                 const idRaw = getFlexibleValue(trx, ['idtransaksi', 'id', 'orderid']);
@@ -516,14 +633,13 @@
                     </tr>
                 `;
             });
-            document.getElementById('trx-table-body').innerHTML = trxTableHTML || '<tr><td colspan="4" class="text-center py-4 text-gray-500">Belum ada transaksi pada periode ini</td></tr>';
+            document.getElementById('trx-table-body').innerHTML = trxTableHTML || '<tr><td colspan="4" class="text-center py-8 text-gray-500 italic">Belum ada transaksi pada periode ini</td></tr>';
 
             // Render Charts
             renderCharts(dailyRevenue, paymentMethods);
         }
 
         function renderCharts(dailyRevenue, paymentMethods) {
-            // Pengaturan Global Chart.js untuk Dark Theme
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.font.family = "'Poppins', sans-serif";
 
@@ -531,11 +647,9 @@
             const ctxRev = document.getElementById('revenueChart').getContext('2d');
             if (chartInstances['revenue']) chartInstances['revenue'].destroy();
 
-            // Mengurutkan tanggal (format YYYY-MM-DD secara abjad pasti urut sesuai tanggal)
             const sortedKeys = Object.keys(dailyRevenue).sort((a, b) => a.localeCompare(b)).slice(-7);
             const revenues = sortedKeys.map(k => dailyRevenue[k]);
             
-            // Konversi YYYY-MM-DD kembali menjadi "DD Bulan" (misal "02 Jul") agar rapi di chart
             const displayLabels = sortedKeys.map(k => {
                 if (k === "-") return k;
                 const parts = k.split('-');
@@ -618,11 +732,7 @@
                     datasets: [{
                         data: payData.length > 0 ? payData : [1],
                         backgroundColor: [
-                            '#8b5cf6', // purple-500
-                            '#3b82f6', // blue-500
-                            '#10b981', // green-500
-                            '#f59e0b', // yellow-500
-                            '#ef4444'  // red-500
+                            '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444' 
                         ],
                         borderWidth: 0,
                         hoverOffset: 4
