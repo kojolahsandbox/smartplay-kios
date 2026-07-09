@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Sindikat</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Poppins", "sans-serif"],
+            },
+            colors: {
+              psblue: "#003791",
+              dark: "#121212",
+              darker: "#0a0a0a",
+              card: "#1e1e24",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1e1e24;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #2563eb;
+      }
+      .glass {
+        background: rgba(30, 30, 36, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .glow {
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+      }
+      /* Style Date Input Icons for Dark Mode */
+      ::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.6;
+        cursor: pointer;
+      }
+      ::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body class="font-sans antialiased min-h-screen flex flex-col">
+    <!-- LOGIN SCREEN -->
+    <div
+      id="login-screen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-darker transition-opacity duration-500"
+    >
+      <div
+        class="glass p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 border-t-4 border-blue-500"
+      >
+        <div class="text-center mb-8">
+          <i
+            data-lucide="gamepad-2"
+            class="w-16 h-16 mx-auto text-blue-500 mb-4 animate-pulse"
+          ></i>
+          <h1 class="text-2xl font-bold tracking-wider">
+            PS RENTAL <span class="text-blue-500">SINDIKAT</span>
+          </h1>
+          <p class="text-gray-400 text-sm mt-2">
+            Masukkan kode akses untuk melihat laporan
+          </p>
+        </div>
+        <form id="login-form" class="space-y-6">
+          <div>
+            <input
+              type="password"
+              id="passcode"
+              class="w-full bg-dark text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-700 transition-all text-center tracking-widest text-lg"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div id="login-error" class="text-red-500 text-sm text-center hidden">
+            Kode akses salah!
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            <i data-lucide="unlock" class="w-5 h-5"></i> Akses Laporan
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (Hidden by default) -->
+    <div
+      id="dashboard"
+      class="hidden flex-1 flex flex-col h-screen overflow-hidden"
+    >
+      <!-- Navbar -->
+      <header
+        class="glass sticky top-0 z-40 px-6 py-4 flex justify-between items-center"
+      >
+        <div class="flex items-center gap-3">
+          <i data-lucide="gamepad-2" class="w-8 h-8 text-blue-500"></i>
+          <h1 class="text-xl font-bold tracking-wider hidden sm:block">
+            RENTAL SINDIKAT
+          </h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <div
+            id="last-update"
+            class="text-xs text-gray-400 hidden sm:block"
+          ></div>
+          <button
+            onclick="fetchData()"
+            class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg transition-colors flex items-center gap-2"
+            title="Refresh Data"
+          >
+            <i data-lucide="refresh-cw" class="w-5 h-5" id="refresh-icon"></i>
+            <span class="hidden sm:block text-sm">Refresh</span>
+          </button>
+          <button
+            onclick="logout()"
+            class="text-red-400 hover:text-red-300 p-2 transition-colors"
+            title="Keluar"
+          >
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Loading Overlay -->
+      <div
+        id="loading-overlay"
+        class="absolute inset-0 z-30 bg-darker/80 backdrop-blur-sm flex flex-col items-center justify-center hidden"
+      >
+        <i
+          data-lucide="loader-2"
+          class="w-12 h-12 text-blue-500 animate-spin mb-4"
+        ></i>
+        <p class="text-lg font-medium animate-pulse">
+          Mengambil data dari Database...
+        </p>
+      </div>
+
+      <!-- Scrollable Content -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <!-- Filter Section -->
+        <div
+          class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 bg-gray-800/40 p-4 rounded-xl border border-gray-700/50"
+        >
+          <h2 class="text-xl font-bold flex items-center gap-2 shrink-0">
+            <i data-lucide="layout-dashboard" class="w-6 h-6 text-blue-500"></i>
+            Ringkasan Laporan
+          </h2>
+
+          <div
+            class="flex flex-wrap items-center gap-3 w-full sm:w-auto sm:justify-end"
+          >
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <i
+                data-lucide="filter"
+                class="w-4 h-4 text-gray-400 hidden sm:block"
+              ></i>
+              <select
+                id="date-filter-type"
+                onchange="handleFilterChange()"
+                class="w-full sm:w-auto bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm"
+              >
+                <option value="all">Semua Waktu</option>
+                <option value="today">Hari Ini</option>
+                <option value="week">Minggu Ini</option>
+                <option value="month">Bulan Ini</option>
+                <option value="custom">Pilih Tanggal</option>
+              </select>
+            </div>
+
+            <div
+              id="custom-date-container"
+              class="hidden flex items-center gap-2 w-full sm:w-auto"
+            >
+              <input
+                type="date"
+                id="start-date"
+                class="bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm flex-1 sm:flex-none"
+                style="color-scheme: dark"
+              />
+              <span class="text-gray-400 text-sm">s/d</span>
+              <input
+                type="date"
+                id="end-date"
+                class="bg-dark text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:border-blue-500 text-sm flex-1 sm:flex-none"
+                style="color-scheme: dark"
+              />
+              <button
+                onclick="applyFilter()"
+                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Cari
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- Card 1 -->
+          <div
+            class="glass p-6 rounded-xl border-l-4 border-green-500 relative overflow-hidden group"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-400 text-sm font-medium">
+                  Pendapatan Sukses
+                </p>
+                <h3
+                  id="kpi-revenue"
+                  class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                >
+                  Rp 0
+                </h3>
+              </div>
+              <div class="p-3 bg-green-500/20 rounded-lg">
+                <i data-lucide="banknote" class="w-6 h-6 text-green-500"></i>
+              </div>
+            </div>
+            <div
+              class="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-110 transition-transform"
+            >
+              <i data-lucide="wallet" class="w-32 h-32"></i>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div
+            class="glass p-6 rounded-xl border-l-4 border-blue-500 relative overflow-hidden group"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-400 text-sm font-medium">Total Transaksi</p>
+                <h3
+                  id="kpi-trx"
+                  class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                >
+                  0
+                </h3>
+                <p id="kpi-trx-success" class="text-xs text-green-400 mt-1">
+                  0 Berhasil
+                </p>
+              </div>
+              <div class="p-3 bg-blue-500/20 rounded-lg">
+                <i
+                  data-lucide="shopping-cart"
+                  class="w-6 h-6 text-blue-500"
+                ></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div
+            class="glass p-6 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-400 text-sm font-medium">TV Sedang Aktif</p>
+                <h3
+                  id="kpi-tv-active"
+                  class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                >
+                  0
+                </h3>
+                <p id="kpi-tv-total" class="text-xs text-gray-400 mt-1">
+                  dari 0 TV
+                </p>
+              </div>
+              <div class="p-3 bg-purple-500/20 rounded-lg">
+                <i
+                  data-lucide="monitor-play"
+                  class="w-6 h-6 text-purple-500"
+                ></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div
+            class="glass p-6 rounded-xl border-l-4 border-yellow-500 relative overflow-hidden group"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-400 text-sm font-medium">
+                  Paket Terfavorit
+                </p>
+                <h3
+                  id="kpi-paket"
+                  class="text-xl sm:text-2xl font-bold mt-2 text-white truncate w-32"
+                >
+                  -
+                </h3>
+                <p id="kpi-paket-count" class="text-xs text-gray-400 mt-1">
+                  0x dipesan
+                </p>
+              </div>
+              <div class="p-3 bg-yellow-500/20 rounded-lg">
+                <i data-lucide="flame" class="w-6 h-6 text-yellow-500"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <!-- Main Line Chart -->
+          <div class="glass p-6 rounded-xl lg:col-span-2">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="trending-up" class="w-5 h-5 text-blue-400"></i>
+              Tren Pendapatan Harian
+            </h3>
+            <div class="relative h-72 w-full">
+              <canvas id="revenueChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Doughnut Chart -->
+          <div class="glass p-6 rounded-xl">
+            <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="w-5 h-5 text-purple-400"></i>
+              Metode Pembayaran
+            </h3>
+            <div class="relative h-64 w-full flex justify-center">
+              <canvas id="paymentChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tables Section -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <!-- Status TV Table -->
+          <div class="glass rounded-xl overflow-hidden flex flex-col h-[400px]">
+            <div
+              class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
+            >
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="tv" class="w-5 h-5 text-blue-400"></i> Status
+                Kios / TV Saat Ini
+              </h3>
+            </div>
+            <div class="overflow-y-auto flex-1 p-0">
+              <table class="w-full text-sm text-left">
+                <thead
+                  class="text-xs text-gray-400 uppercase bg-gray-800/50 sticky top-0"
+                >
+                  <tr>
+                    <th class="px-6 py-3">Nama TV</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Batas Waktu</th>
+                  </tr>
+                </thead>
+                <tbody id="tv-table-body" class="divide-y divide-gray-800">
+                  <!-- Data injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Transactions Table -->
+          <div class="glass rounded-xl overflow-hidden flex flex-col h-[400px]">
+            <div
+              class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
+            >
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="history" class="w-5 h-5 text-green-400"></i>
+                Riwayat Transaksi
+              </h3>
+            </div>
+            <div class="overflow-y-auto flex-1 p-0">
+              <table class="w-full text-sm text-left">
+                <thead
+                  class="text-xs text-gray-400 uppercase bg-gray-800/50 sticky top-0"
+                >
+                  <tr>
+                    <th class="px-6 py-3">ID / Waktu</th>
+                    <th class="px-6 py-3">Nominal</th>
+                    <th class="px-6 py-3">Metode</th>
+                    <th class="px-6 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="trx-table-body" class="divide-y divide-gray-800">
+                  <!-- Data injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer
+          class="mt-8 text-center text-gray-500 text-xs py-4 border-t border-gray-800"
+        >
+          &copy; <span id="year"></span> PS Rental Sindikat
+        </footer>
+      </main>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+      // Inisialisasi Icons
+      lucide.createIcons();
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      // Konfigurasi
+      const PASSCODE = "sikatabis38";
+      const API_URL =
+        "https://script.google.com/macros/s/AKfycbzH68zbBh0Ga4z7Pg2yU79K5-Es-Gio5UZiJviJcl8ClgUl5vf1gPlAWAu70UEBUqKeUg/exec";
+
+      let chartInstances = {};
+      let globalData = { tvs: [], pakets: [], transaksi: [] };
+
+      // Utility: Format Rupiah
+      const formatRupiah = (number) => {
+        return new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 0,
+        }).format(number);
+      };
+
+      // Utility 1: Isolasi Total Waktu ke WIB (+7) untuk Parsing dari GSheet
+      const getWIBShifted = (dateStr) => {
+        if (!dateStr) return null;
+        let str = String(dateStr).trim();
+
+        if (!str.includes("Z") && !str.includes("+") && !str.includes("T")) {
+          str = str.replace(" ", "T") + "Z";
+        } else if (
+          str.includes("T") &&
+          !str.includes("Z") &&
+          !str.includes("+")
+        ) {
+          str = str + "Z";
+        }
+
+        let d = new Date(str);
+        if (isNaN(d.getTime())) {
+          d = new Date(dateStr);
+          if (isNaN(d.getTime())) return null;
+        }
+
+        // Tambahkan 7 Jam untuk menggeser Epoch Time
+        return new Date(d.getTime() + 7 * 60 * 60 * 1000);
+      };
+
+      // Utility 2: Dapatkan Waktu Real-Time WIB Saat Ini
+      const getCurrentWIB = () => {
+        return new Date(Date.now() + 7 * 60 * 60 * 1000);
+      };
+
+      // Utility 3: Pembaca Kolom Dinamis
+      const getFlexibleValue = (obj, possibleKeys) => {
+        const keys = Object.keys(obj);
+        for (let k of keys) {
+          const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (possibleKeys.includes(cleanKey)) return obj[k];
+        }
+        return null;
+      };
+
+      const formatDateTime = (wibDateObj) => {
+        if (!wibDateObj || isNaN(wibDateObj.getTime())) return "-";
+        let day = String(wibDateObj.getUTCDate()).padStart(2, "0");
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "Mei",
+          "Jun",
+          "Jul",
+          "Agu",
+          "Sep",
+          "Okt",
+          "Nov",
+          "Des",
+        ];
+        let month = months[wibDateObj.getUTCMonth()];
+        let hours = String(wibDateObj.getUTCHours()).padStart(2, "0");
+        let mins = String(wibDateObj.getUTCMinutes()).padStart(2, "0");
+        return `${day} ${month} ${hours}:${mins}`;
+      };
+
+      const getSortableDateKey = (wibDateObj) => {
+        if (!wibDateObj || isNaN(wibDateObj.getTime())) return "-";
+        let y = wibDateObj.getUTCFullYear();
+        let m = String(wibDateObj.getUTCMonth() + 1).padStart(2, "0");
+        let d = String(wibDateObj.getUTCDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      };
+
+      // --- SISTEM LOGIN ---
+      document.getElementById("login-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("passcode").value;
+        if (input === PASSCODE) {
+          document.getElementById("login-screen").classList.add("opacity-0");
+          setTimeout(() => {
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
+            initDatePickers(); // Inisialisasi tanggal form input default
+            fetchData(); // Load data pertama kali
+          }, 500);
+        } else {
+          const err = document.getElementById("login-error");
+          err.classList.remove("hidden");
+          setTimeout(() => err.classList.add("hidden"), 3000);
+        }
+      });
+
+      function logout() {
+        document.getElementById("dashboard").classList.add("hidden");
+        document
+          .getElementById("login-screen")
+          .classList.remove("hidden", "opacity-0");
+        document.getElementById("passcode").value = "";
+      }
+
+      // --- SISTEM FILTER TANGGAL ---
+      function initDatePickers() {
+        const nowWIB = getCurrentWIB();
+        const nowYear = nowWIB.getUTCFullYear();
+        const nowMonth = String(nowWIB.getUTCMonth() + 1).padStart(2, "0");
+        const nowDate = String(nowWIB.getUTCDate()).padStart(2, "0");
+        const nowDateStr = `${nowYear}-${nowMonth}-${nowDate}`;
+
+        document.getElementById("start-date").value = nowDateStr;
+        document.getElementById("end-date").value = nowDateStr;
+      }
+
+      function handleFilterChange() {
+        const filterType = document.getElementById("date-filter-type").value;
+        const customContainer = document.getElementById(
+          "custom-date-container",
+        );
+
+        if (filterType === "custom") {
+          customContainer.classList.remove("hidden");
+        } else {
+          customContainer.classList.add("hidden");
+          applyFilter();
+        }
+      }
+
+      function applyFilter() {
+        if (!globalData.transaksi) return;
+
+        const filterType = document.getElementById("date-filter-type").value;
+        const startDateInput = document.getElementById("start-date").value;
+        const endDateInput = document.getElementById("end-date").value;
+
+        // Filter Histori Transaksi
+        let filteredTrx = globalData.transaksi.filter((trx) => {
+          const dateRaw = getFlexibleValue(trx, [
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+            "tanggal",
+          ]);
+          if (!dateRaw) return true; // Loloskan jika tidak ada field tanggal
+
+          const wibDate = getWIBShifted(dateRaw);
+          if (!wibDate) return true;
+
+          const txTime = wibDate.getTime();
+          const txYear = wibDate.getUTCFullYear();
+          const txMonth = wibDate.getUTCMonth();
+          const txDate = wibDate.getUTCDate();
+          const txDateStr = `${txYear}-${String(txMonth + 1).padStart(2, "0")}-${String(txDate).padStart(2, "0")}`;
+
+          const nowWIB = getCurrentWIB();
+          const nowYear = nowWIB.getUTCFullYear();
+          const nowMonth = nowWIB.getUTCMonth();
+          const nowDate = nowWIB.getUTCDate();
+          const nowDateStr = `${nowYear}-${String(nowMonth + 1).padStart(2, "0")}-${String(nowDate).padStart(2, "0")}`;
+
+          if (filterType === "today") {
+            return txDateStr === nowDateStr;
+          } else if (filterType === "week") {
+            // Mulai minggu dari Hari Senin (WIB)
+            const day = nowWIB.getUTCDay();
+            const diffToMonday =
+              nowWIB.getUTCDate() - day + (day === 0 ? -6 : 1);
+
+            const startOfWeek = new Date(nowWIB);
+            startOfWeek.setUTCDate(diffToMonday);
+            startOfWeek.setUTCHours(0, 0, 0, 0);
+
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+            endOfWeek.setUTCHours(23, 59, 59, 999);
+
+            return (
+              txTime >= startOfWeek.getTime() && txTime <= endOfWeek.getTime()
+            );
+          } else if (filterType === "month") {
+            return txYear === nowYear && txMonth === nowMonth;
+          } else if (filterType === "custom") {
+            if (!startDateInput || !endDateInput) return true;
+            return txDateStr >= startDateInput && txDateStr <= endDateInput;
+          }
+
+          return true; // value === 'all'
+        });
+
+        // Jalankan UI processor dengan data yang telah difilter
+        // (Catatan: Status TV tidak difilter berdasarkan waktu karena status TV adalah real-time/saat ini)
+        processDashboardData(globalData.tvs, globalData.pakets, filteredTrx);
+      }
+
+      // --- FETCH & PROSES DATA ---
+      async function fetchData() {
+        const overlay = document.getElementById("loading-overlay");
+        const refreshIcon = document.getElementById("refresh-icon");
+
+        overlay.classList.remove("hidden");
+        refreshIcon.classList.add("animate-spin");
+
+        try {
+          const response = await fetch(API_URL);
+          const data = await response.json();
+
+          globalData = data;
+          applyFilter(); // Eksekusi penyaringan (otomatis panggil processDashboardData)
+
+          // Update label waktu refresh menggunakan Waktu Absolut WIB
+          const nowWib = getCurrentWIB();
+          let h = String(nowWib.getUTCHours()).padStart(2, "0");
+          let m = String(nowWib.getUTCMinutes()).padStart(2, "0");
+          document.getElementById("last-update").innerHTML =
+            `Update terakhir: <span class="font-medium text-white">${h}:${m} WIB</span>`;
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          alert(
+            "Gagal mengambil data dari server. Periksa koneksi atau URL API Anda.",
+          );
+        } finally {
+          overlay.classList.add("hidden");
+          refreshIcon.classList.remove("animate-spin");
+        }
+      }
+
+      function processDashboardData(tvs, pakets, transaksi) {
+        tvs = tvs || [];
+        pakets = pakets || [];
+        transaksi = transaksi || [];
+
+        // 1. Hitung KPIs
+        let totalRevenue = 0;
+        let successTrxCount = 0;
+        let activeTvCount = 0;
+
+        let paketCounter = {};
+        let paymentMethods = {};
+        let dailyRevenue = {};
+
+        // Proses Data Transaksi (Sudah Terdapat Filter)
+        transaksi.forEach((trx) => {
+          const statusRaw = getFlexibleValue(trx, ["statusbayar", "status"]);
+          const statusLower = (statusRaw ? String(statusRaw) : "")
+            .toLowerCase()
+            .trim();
+
+          const totalRaw = getFlexibleValue(trx, [
+            "totalbayar",
+            "total",
+            "nominal",
+          ]);
+          const total = parseFloat(totalRaw || 0);
+
+          const metodeRaw = getFlexibleValue(trx, [
+            "metodebayar",
+            "metode",
+            "pembayaran",
+          ]);
+          const metode = metodeRaw ? String(metodeRaw).trim() : "Unknown";
+
+          const idPaketRaw = getFlexibleValue(trx, ["idpaket", "paket"]);
+          const idPaket = idPaketRaw ? String(idPaketRaw).trim() : "Unknown";
+
+          const dateRaw = getFlexibleValue(trx, [
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+            "tanggal",
+          ]);
+          const trxDate = dateRaw ? getWIBShifted(dateRaw) : getCurrentWIB();
+
+          if (
+            statusLower === "paid" ||
+            statusLower === "sukses" ||
+            statusLower === "selesai"
+          ) {
+            totalRevenue += total;
+            successTrxCount++;
+
+            const dateKey = getSortableDateKey(trxDate);
+            dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + total;
+          }
+
+          paketCounter[idPaket] = (paketCounter[idPaket] || 0) + 1;
+          paymentMethods[metode] = (paymentMethods[metode] || 0) + 1;
+        });
+
+        // Cari paket terfavorit
+        let favPaketId = Object.keys(paketCounter).reduce(
+          (a, b) => (paketCounter[a] > paketCounter[b] ? a : b),
+          "-",
+        );
+        let favPaketName = favPaketId;
+        let favPaketCount = paketCounter[favPaketId] || 0;
+
+        const paketInfo = pakets.find(
+          (p) => getFlexibleValue(p, ["idpaket", "id"]) == favPaketId,
+        );
+        if (paketInfo)
+          favPaketName =
+            getFlexibleValue(paketInfo, ["namapaket", "nama"]) || favPaketId;
+
+        // Proses Data TV Status
+        let tvTableHTML = "";
+        tvs.forEach((tv) => {
+          const statusRaw = getFlexibleValue(tv, [
+            "status",
+            "statustv",
+            "kondisi",
+          ]);
+          const status = statusRaw ? String(statusRaw).trim() : "Kosong";
+
+          const namaTvRaw = getFlexibleValue(tv, [
+            "namatv",
+            "idtv",
+            "kios",
+            "nama",
+          ]);
+          const namaTv = namaTvRaw ? String(namaTvRaw).trim() : "TV Unknown";
+
+          const waktuSelesaiRaw = getFlexibleValue(tv, [
+            "waktuselesai",
+            "bataswaktu",
+            "selesai",
+            "expire",
+          ]);
+          const waktuSelesai = waktuSelesaiRaw
+            ? getWIBShifted(waktuSelesaiRaw)
+            : null;
+
+          const isAktif = status.toLowerCase() === "aktif";
+          if (isAktif) activeTvCount++;
+
+          let statusBadge = isAktif
+            ? `<span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full border border-green-500/50 animate-pulse flex inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>Aktif</span>`
+            : `<span class="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full border border-gray-600">Kosong</span>`;
+
+          tvTableHTML += `
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="px-6 py-4 font-medium text-white">${namaTv}</td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-gray-400 group-hover:text-gray-300">${isAktif ? formatDateTime(waktuSelesai) : "-"}</td>
+                    </tr>
+                `;
+        });
+
+        // Update UI KPIs
+        document.getElementById("kpi-revenue").textContent =
+          formatRupiah(totalRevenue);
+        document.getElementById("kpi-trx").textContent = transaksi.length;
+        document.getElementById("kpi-trx-success").textContent =
+          `${successTrxCount} Berhasil`;
+        document.getElementById("kpi-tv-active").textContent = activeTvCount;
+        document.getElementById("kpi-tv-total").textContent =
+          `dari ${tvs.length} Unit TV`;
+        document.getElementById("kpi-paket").textContent = favPaketName;
+        document.getElementById("kpi-paket-count").textContent =
+          `${favPaketCount}x Dipesan`;
+        document.getElementById("tv-table-body").innerHTML =
+          tvTableHTML ||
+          '<tr><td colspan="3" class="text-center py-4 text-gray-500">Tidak ada data TV</td></tr>';
+
+        // Render Tabel Transaksi Terakhir (Filtered)
+        let trxTableHTML = "";
+        // Sort transaksi by date descending untuk tabel history
+        const sortedTrx = [...transaksi].sort((a, b) => {
+          const dateA =
+            getWIBShifted(
+              getFlexibleValue(a, ["waktumulai", "timestamp", "waktudibuat"]),
+            ) || new Date(0);
+          const dateB =
+            getWIBShifted(
+              getFlexibleValue(b, ["waktumulai", "timestamp", "waktudibuat"]),
+            ) || new Date(0);
+          return dateB - dateA;
+        });
+        const recentTrx = sortedTrx.slice(0, 15);
+
+        recentTrx.forEach((trx) => {
+          const idRaw = getFlexibleValue(trx, ["idtransaksi", "id", "orderid"]);
+          const id = idRaw ? String(idRaw).trim() : "-";
+          const idTvRaw = getFlexibleValue(trx, [
+            "idtv",
+            "id_tv",
+            "tv",
+            "namatv",
+            "kios",
+          ]);
+
+          const idTv = idTvRaw ? String(idTvRaw).trim() : "-";
+
+          const totalRaw = getFlexibleValue(trx, [
+            "totalbayar",
+            "total",
+            "nominal",
+          ]);
+          const total = parseFloat(totalRaw || 0);
+
+          const metodeRaw = getFlexibleValue(trx, ["metodebayar", "metode"]);
+          const metode = metodeRaw ? String(metodeRaw).trim() : "Unknown";
+
+          const statusRaw = getFlexibleValue(trx, ["statusbayar", "status"]);
+          const status = statusRaw ? String(statusRaw).trim() : "Pending";
+          const statusLower = status.toLowerCase();
+
+          const dateRaw = getFlexibleValue(trx, [
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+          ]);
+          const trxDate = dateRaw ? getWIBShifted(dateRaw) : null;
+
+          let statusColor =
+            "text-yellow-400 bg-yellow-400/10 border-yellow-400/30";
+          if (
+            statusLower === "paid" ||
+            statusLower === "sukses" ||
+            statusLower === "selesai"
+          )
+            statusColor = "text-green-400 bg-green-400/10 border-green-400/30";
+          if (
+            statusLower === "failed" ||
+            statusLower === "expire" ||
+            statusLower === "cancel"
+          )
+            statusColor = "text-red-400 bg-red-400/10 border-red-400/30";
+
+          trxTableHTML += `
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-200">${id}</div>
+                            <div class="text-xs text-gray-500">${idTv}</div>
+                            <div class="text-xs text-gray-500">${formatDateTime(trxDate)}</div>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-white">${formatRupiah(total)}</td>
+                        <td class="px-6 py-4 text-gray-400">${metode}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full border ${statusColor}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+        });
+        document.getElementById("trx-table-body").innerHTML =
+          trxTableHTML ||
+          '<tr><td colspan="4" class="text-center py-8 text-gray-500 italic">Belum ada transaksi pada periode ini</td></tr>';
+
+        // Render Charts
+        renderCharts(dailyRevenue, paymentMethods);
+      }
+
+      function renderCharts(dailyRevenue, paymentMethods) {
+        Chart.defaults.color = "#9ca3af";
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+
+        // 1. Chart Line (Tren Pendapatan)
+        const ctxRev = document.getElementById("revenueChart").getContext("2d");
+        if (chartInstances["revenue"]) chartInstances["revenue"].destroy();
+
+        const sortedKeys = Object.keys(dailyRevenue)
+          .sort((a, b) => a.localeCompare(b))
+          .slice(-7);
+        const revenues = sortedKeys.map((k) => dailyRevenue[k]);
+
+        const displayLabels = sortedKeys.map((k) => {
+          if (k === "-") return k;
+          const parts = k.split("-");
+          const months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "Mei",
+            "Jun",
+            "Jul",
+            "Agu",
+            "Sep",
+            "Okt",
+            "Nov",
+            "Des",
+          ];
+          return `${parts[2]} ${months[parseInt(parts[1]) - 1]}`;
+        });
+
+        const gradientBlue = ctxRev.createLinearGradient(0, 0, 0, 400);
+        gradientBlue.addColorStop(0, "rgba(59, 130, 246, 0.5)");
+        gradientBlue.addColorStop(1, "rgba(59, 130, 246, 0.0)");
+
+        chartInstances["revenue"] = new Chart(ctxRev, {
+          type: "line",
+          data: {
+            labels:
+              displayLabels.length > 0 ? displayLabels : ["Belum ada data"],
+            datasets: [
+              {
+                label: "Pendapatan (Rp)",
+                data: revenues.length > 0 ? revenues : [0],
+                borderColor: "#3b82f6",
+                backgroundColor: gradientBlue,
+                borderWidth: 3,
+                pointBackgroundColor: "#1e3a8a",
+                pointBorderColor: "#3b82f6",
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "rgba(17, 24, 39, 0.9)",
+                titleColor: "#fff",
+                bodyColor: "#fff",
+                borderColor: "#374151",
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                  label: function (context) {
+                    return formatRupiah(context.raw);
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: "rgba(75, 85, 99, 0.2)" },
+                ticks: {
+                  callback: function (value) {
+                    if (value >= 1000000)
+                      return "Rp " + (value / 1000000).toFixed(1) + "M";
+                    if (value >= 1000)
+                      return "Rp " + (value / 1000).toFixed(0) + "K";
+                    return "Rp " + value;
+                  },
+                },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
+        });
+
+        // 2. Chart Doughnut (Metode Pembayaran)
+        const ctxPay = document.getElementById("paymentChart").getContext("2d");
+        if (chartInstances["payment"]) chartInstances["payment"].destroy();
+
+        const payLabels = Object.keys(paymentMethods);
+        const payData = Object.values(paymentMethods);
+
+        chartInstances["payment"] = new Chart(ctxPay, {
+          type: "doughnut",
+          data: {
+            labels: payLabels.length > 0 ? payLabels : ["Belum ada data"],
+            datasets: [
+              {
+                data: payData.length > 0 ? payData : [1],
+                backgroundColor: [
+                  "#8b5cf6",
+                  "#3b82f6",
+                  "#10b981",
+                  "#f59e0b",
+                  "#ef4444",
+                ],
+                borderWidth: 0,
+                hoverOffset: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "70%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  padding: 20,
+                  usePointStyle: true,
+                  color: "#d1d5db",
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(17, 24, 39, 0.9)",
+                padding: 10,
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
