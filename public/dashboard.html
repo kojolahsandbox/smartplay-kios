@@ -170,6 +170,24 @@
 
       <!-- Scrollable Content -->
       <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <!-- Tab Navigation -->
+        <div class="flex items-center gap-2 mb-6">
+          <button
+            id="tab-btn-rental"
+            onclick="switchTab('rental')"
+            class="px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+          >
+            <i data-lucide="gamepad-2" class="w-4 h-4"></i> Laporan Rental
+          </button>
+          <button
+            id="tab-btn-fnb"
+            onclick="switchTab('fnb')"
+            class="px-5 py-2.5 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors bg-gray-800/60 text-gray-300 hover:bg-gray-700/60"
+          >
+            <i data-lucide="utensils" class="w-4 h-4"></i> Laporan F&amp;B
+          </button>
+        </div>
+
         <!-- Filter Section -->
         <div
           class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 bg-gray-800/40 p-4 rounded-xl border border-gray-700/50"
@@ -227,6 +245,8 @@
           </div>
         </div>
 
+        <!-- ===================== TAB: LAPORAN RENTAL ===================== -->
+        <div id="tab-content-rental">
         <!-- KPI Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <!-- Card 1 -->
@@ -418,6 +438,202 @@
             </div>
           </div>
         </div>
+        </div>
+        <!-- =================== END TAB: LAPORAN RENTAL =================== -->
+
+        <!-- ===================== TAB: LAPORAN F&B ===================== -->
+        <div id="tab-content-fnb" class="hidden">
+          <!-- KPI Cards FnB -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Card 1 -->
+            <div
+              class="glass p-6 rounded-xl border-l-4 border-green-500 relative overflow-hidden group"
+            >
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-gray-400 text-sm font-medium">
+                    Pendapatan F&amp;B
+                  </p>
+                  <h3
+                    id="fnb-kpi-revenue"
+                    class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                  >
+                    Rp 0
+                  </h3>
+                </div>
+                <div class="p-3 bg-green-500/20 rounded-lg">
+                  <i data-lucide="banknote" class="w-6 h-6 text-green-500"></i>
+                </div>
+              </div>
+              <div
+                class="absolute -right-6 -bottom-6 opacity-10 group-hover:scale-110 transition-transform"
+              >
+                <i data-lucide="utensils" class="w-32 h-32"></i>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div
+              class="glass p-6 rounded-xl border-l-4 border-blue-500 relative overflow-hidden group"
+            >
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-gray-400 text-sm font-medium">Total Pesanan</p>
+                  <h3
+                    id="fnb-kpi-orders"
+                    class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                  >
+                    0
+                  </h3>
+                  <p id="fnb-kpi-orders-paid" class="text-xs text-green-400 mt-1">
+                    0 Lunas
+                  </p>
+                </div>
+                <div class="p-3 bg-blue-500/20 rounded-lg">
+                  <i
+                    data-lucide="receipt"
+                    class="w-6 h-6 text-blue-500"
+                  ></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div
+              class="glass p-6 rounded-xl border-l-4 border-purple-500 relative overflow-hidden group"
+            >
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-gray-400 text-sm font-medium">
+                    Rata-rata / Pesanan
+                  </p>
+                  <h3
+                    id="fnb-kpi-avg"
+                    class="text-2xl sm:text-3xl font-bold mt-2 text-white"
+                  >
+                    Rp 0
+                  </h3>
+                </div>
+                <div class="p-3 bg-purple-500/20 rounded-lg">
+                  <i
+                    data-lucide="calculator"
+                    class="w-6 h-6 text-purple-500"
+                  ></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div
+              class="glass p-6 rounded-xl border-l-4 border-yellow-500 relative overflow-hidden group"
+            >
+              <div class="flex justify-between items-start">
+                <div>
+                  <p class="text-gray-400 text-sm font-medium">
+                    Menu Terlaris
+                  </p>
+                  <h3
+                    id="fnb-kpi-top-item"
+                    class="text-xl sm:text-2xl font-bold mt-2 text-white truncate w-32"
+                  >
+                    -
+                  </h3>
+                  <p id="fnb-kpi-top-item-count" class="text-xs text-gray-400 mt-1">
+                    0x terjual
+                  </p>
+                </div>
+                <div class="p-3 bg-yellow-500/20 rounded-lg">
+                  <i data-lucide="flame" class="w-6 h-6 text-yellow-500"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts FnB -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Main Line Chart -->
+            <div class="glass p-6 rounded-xl lg:col-span-2">
+              <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-5 h-5 text-blue-400"></i>
+                Tren Pendapatan F&amp;B Harian
+              </h3>
+              <div class="relative h-72 w-full">
+                <canvas id="fnbRevenueChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Bar Chart Top Items -->
+            <div class="glass p-6 rounded-xl">
+              <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-orange-400"></i>
+                Top 5 Menu Terlaris
+              </h3>
+              <div class="relative h-64 w-full flex justify-center">
+                <canvas id="fnbItemsChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tables FnB -->
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <!-- Rincian Item Terjual -->
+            <div class="glass rounded-xl overflow-hidden flex flex-col h-[400px]">
+              <div
+                class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
+              >
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                  <i data-lucide="list-ordered" class="w-5 h-5 text-orange-400"></i>
+                  Rincian Item Terjual
+                </h3>
+              </div>
+              <div class="overflow-y-auto flex-1 p-0">
+                <table class="w-full text-sm text-left">
+                  <thead
+                    class="text-xs text-gray-400 uppercase bg-gray-800/50 sticky top-0"
+                  >
+                    <tr>
+                      <th class="px-6 py-3">Nama Item</th>
+                      <th class="px-6 py-3">Qty Terjual</th>
+                      <th class="px-6 py-3">Total Pendapatan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fnb-items-table-body" class="divide-y divide-gray-800">
+                    <!-- Data injected via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Riwayat Pesanan FnB -->
+            <div class="glass rounded-xl overflow-hidden flex flex-col h-[400px]">
+              <div
+                class="p-5 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30"
+              >
+                <h3 class="text-lg font-semibold flex items-center gap-2">
+                  <i data-lucide="history" class="w-5 h-5 text-green-400"></i>
+                  Riwayat Pesanan F&amp;B
+                </h3>
+              </div>
+              <div class="overflow-y-auto flex-1 p-0">
+                <table class="w-full text-sm text-left">
+                  <thead
+                    class="text-xs text-gray-400 uppercase bg-gray-800/50 sticky top-0"
+                  >
+                    <tr>
+                      <th class="px-6 py-3">ID / Waktu</th>
+                      <th class="px-6 py-3">Total</th>
+                      <th class="px-6 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="fnb-trx-table-body" class="divide-y divide-gray-800">
+                    <!-- Data injected via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- =================== END TAB: LAPORAN F&B =================== -->
 
         <!-- Footer -->
         <footer
@@ -440,7 +656,41 @@
         "https://script.google.com/macros/s/AKfycbzH68zbBh0Ga4z7Pg2yU79K5-Es-Gio5UZiJviJcl8ClgUl5vf1gPlAWAu70UEBUqKeUg/exec";
 
       let chartInstances = {};
-      let globalData = { tvs: [], pakets: [], transaksi: [] };
+      let globalData = {
+        tvs: [],
+        pakets: [],
+        transaksi: [],
+        fnbs: [],
+        pesanan_fnb: [],
+        detail_fnb: [],
+      };
+      let currentTab = "rental";
+
+      // --- SISTEM TAB ---
+      function switchTab(tab) {
+        currentTab = tab;
+        const btnRental = document.getElementById("tab-btn-rental");
+        const btnFnb = document.getElementById("tab-btn-fnb");
+        const contentRental = document.getElementById("tab-content-rental");
+        const contentFnb = document.getElementById("tab-content-fnb");
+
+        if (tab === "fnb") {
+          contentRental.classList.add("hidden");
+          contentFnb.classList.remove("hidden");
+          btnFnb.classList.add("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-600/20");
+          btnFnb.classList.remove("bg-gray-800/60", "text-gray-300");
+          btnRental.classList.remove("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-600/20");
+          btnRental.classList.add("bg-gray-800/60", "text-gray-300");
+        } else {
+          contentFnb.classList.add("hidden");
+          contentRental.classList.remove("hidden");
+          btnRental.classList.add("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-600/20");
+          btnRental.classList.remove("bg-gray-800/60", "text-gray-300");
+          btnFnb.classList.remove("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-600/20");
+          btnFnb.classList.add("bg-gray-800/60", "text-gray-300");
+        }
+        lucide.createIcons();
+      }
 
       // Utility: Format Rupiah
       const formatRupiah = (number) => {
@@ -575,6 +825,48 @@
         }
       }
 
+      // Helper terpusat: cek apakah sebuah tanggal (WIB) masuk ke rentang filter aktif
+      function isWithinDateFilter(wibDate, filterType, startDateInput, endDateInput) {
+        if (!wibDate) return true;
+
+        const txTime = wibDate.getTime();
+        const txYear = wibDate.getUTCFullYear();
+        const txMonth = wibDate.getUTCMonth();
+        const txDate = wibDate.getUTCDate();
+        const txDateStr = `${txYear}-${String(txMonth + 1).padStart(2, "0")}-${String(txDate).padStart(2, "0")}`;
+
+        const nowWIB = getCurrentWIB();
+        const nowYear = nowWIB.getUTCFullYear();
+        const nowMonth = nowWIB.getUTCMonth();
+        const nowDate = nowWIB.getUTCDate();
+        const nowDateStr = `${nowYear}-${String(nowMonth + 1).padStart(2, "0")}-${String(nowDate).padStart(2, "0")}`;
+
+        if (filterType === "today") {
+          return txDateStr === nowDateStr;
+        } else if (filterType === "week") {
+          // Mulai minggu dari Hari Senin (WIB)
+          const day = nowWIB.getUTCDay();
+          const diffToMonday = nowWIB.getUTCDate() - day + (day === 0 ? -6 : 1);
+
+          const startOfWeek = new Date(nowWIB);
+          startOfWeek.setUTCDate(diffToMonday);
+          startOfWeek.setUTCHours(0, 0, 0, 0);
+
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+          endOfWeek.setUTCHours(23, 59, 59, 999);
+
+          return txTime >= startOfWeek.getTime() && txTime <= endOfWeek.getTime();
+        } else if (filterType === "month") {
+          return txYear === nowYear && txMonth === nowMonth;
+        } else if (filterType === "custom") {
+          if (!startDateInput || !endDateInput) return true;
+          return txDateStr >= startDateInput && txDateStr <= endDateInput;
+        }
+
+        return true; // value === 'all'
+      }
+
       function applyFilter() {
         if (!globalData.transaksi) return;
 
@@ -582,7 +874,7 @@
         const startDateInput = document.getElementById("start-date").value;
         const endDateInput = document.getElementById("end-date").value;
 
-        // Filter Histori Transaksi
+        // Filter Histori Transaksi Rental
         let filteredTrx = globalData.transaksi.filter((trx) => {
           const dateRaw = getFlexibleValue(trx, [
             "waktumulai",
@@ -591,54 +883,30 @@
             "tanggal",
           ]);
           if (!dateRaw) return true; // Loloskan jika tidak ada field tanggal
-
           const wibDate = getWIBShifted(dateRaw);
           if (!wibDate) return true;
+          return isWithinDateFilter(wibDate, filterType, startDateInput, endDateInput);
+        });
 
-          const txTime = wibDate.getTime();
-          const txYear = wibDate.getUTCFullYear();
-          const txMonth = wibDate.getUTCMonth();
-          const txDate = wibDate.getUTCDate();
-          const txDateStr = `${txYear}-${String(txMonth + 1).padStart(2, "0")}-${String(txDate).padStart(2, "0")}`;
-
-          const nowWIB = getCurrentWIB();
-          const nowYear = nowWIB.getUTCFullYear();
-          const nowMonth = nowWIB.getUTCMonth();
-          const nowDate = nowWIB.getUTCDate();
-          const nowDateStr = `${nowYear}-${String(nowMonth + 1).padStart(2, "0")}-${String(nowDate).padStart(2, "0")}`;
-
-          if (filterType === "today") {
-            return txDateStr === nowDateStr;
-          } else if (filterType === "week") {
-            // Mulai minggu dari Hari Senin (WIB)
-            const day = nowWIB.getUTCDay();
-            const diffToMonday =
-              nowWIB.getUTCDate() - day + (day === 0 ? -6 : 1);
-
-            const startOfWeek = new Date(nowWIB);
-            startOfWeek.setUTCDate(diffToMonday);
-            startOfWeek.setUTCHours(0, 0, 0, 0);
-
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
-            endOfWeek.setUTCHours(23, 59, 59, 999);
-
-            return (
-              txTime >= startOfWeek.getTime() && txTime <= endOfWeek.getTime()
-            );
-          } else if (filterType === "month") {
-            return txYear === nowYear && txMonth === nowMonth;
-          } else if (filterType === "custom") {
-            if (!startDateInput || !endDateInput) return true;
-            return txDateStr >= startDateInput && txDateStr <= endDateInput;
-          }
-
-          return true; // value === 'all'
+        // Filter Pesanan F&B (pakai field tanggal yang sama polanya)
+        let filteredFnb = (globalData.pesanan_fnb || []).filter((p) => {
+          const dateRaw = getFlexibleValue(p, [
+            "waktu",
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+            "tanggal",
+          ]);
+          if (!dateRaw) return true;
+          const wibDate = getWIBShifted(dateRaw);
+          if (!wibDate) return true;
+          return isWithinDateFilter(wibDate, filterType, startDateInput, endDateInput);
         });
 
         // Jalankan UI processor dengan data yang telah difilter
         // (Catatan: Status TV tidak difilter berdasarkan waktu karena status TV adalah real-time/saat ini)
         processDashboardData(globalData.tvs, globalData.pakets, filteredTrx);
+        processFnbData(filteredFnb, globalData.detail_fnb, globalData.fnbs);
       }
 
       // --- FETCH & PROSES DATA ---
@@ -1040,6 +1308,288 @@
                 backgroundColor: "rgba(17, 24, 39, 0.9)",
                 padding: 10,
               },
+            },
+          },
+        });
+      }
+
+      // =========================================================
+      // LAPORAN F&B
+      // =========================================================
+      function processFnbData(pesananFnb, detailFnb, fnbs) {
+        pesananFnb = pesananFnb || [];
+        detailFnb = detailFnb || [];
+        fnbs = fnbs || [];
+
+        // Kumpulkan id pesanan yang lolos filter tanggal, untuk join ke detail item
+        let validIds = new Set();
+        pesananFnb.forEach((p) => {
+          const idPesananRaw = getFlexibleValue(p, ["idpesananfnb", "idpesanan", "id"]);
+          const noTrxRaw = getFlexibleValue(p, ["notransaksi"]);
+          if (idPesananRaw) validIds.add(String(idPesananRaw).trim());
+          if (noTrxRaw) validIds.add(String(noTrxRaw).trim());
+        });
+
+        let totalRevenue = 0;
+        let paidCount = 0;
+        let dailyRevenue = {};
+
+        pesananFnb.forEach((p) => {
+          const statusRaw = getFlexibleValue(p, ["status", "statusbayar"]);
+          const statusLower = (statusRaw ? String(statusRaw) : "").toLowerCase().trim();
+
+          const totalRaw = getFlexibleValue(p, ["total", "totalbayar", "nominal"]);
+          const total = parseFloat(totalRaw || 0);
+
+          const dateRaw = getFlexibleValue(p, [
+            "waktu",
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+            "tanggal",
+          ]);
+          const pDate = dateRaw ? getWIBShifted(dateRaw) : getCurrentWIB();
+
+          if (statusLower === "paid" || statusLower === "sukses" || statusLower === "selesai") {
+            totalRevenue += total;
+            paidCount++;
+            const dateKey = getSortableDateKey(pDate);
+            dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + total;
+          }
+        });
+
+        const totalOrders = pesananFnb.length;
+        const avgPerOrder = paidCount > 0 ? totalRevenue / paidCount : 0;
+
+        // Rekap item terjual (hanya dari pesanan berstatus Paid & sesuai filter tanggal)
+        let itemCounter = {}; // nama_item -> { qty, revenue }
+        detailFnb.forEach((d) => {
+          const idPesananRef = getFlexibleValue(d, ["idpesanan"]);
+          if (!idPesananRef || !validIds.has(String(idPesananRef).trim())) return;
+
+          const namaItemRaw = getFlexibleValue(d, ["namaitem", "nama"]);
+          const namaItem = namaItemRaw ? String(namaItemRaw).trim() : "Item Tidak Dikenal";
+
+          const qtyRaw = getFlexibleValue(d, ["qty", "jumlah"]);
+          const qty = parseFloat(qtyRaw || 0);
+
+          const subtotalRaw = getFlexibleValue(d, ["subtotal"]);
+          const subtotal = parseFloat(subtotalRaw || 0);
+
+          if (!itemCounter[namaItem]) itemCounter[namaItem] = { qty: 0, revenue: 0 };
+          itemCounter[namaItem].qty += qty;
+          itemCounter[namaItem].revenue += subtotal;
+        });
+
+        const sortedItems = Object.entries(itemCounter).sort((a, b) => b[1].qty - a[1].qty);
+        const topItem = sortedItems.length > 0 ? sortedItems[0] : null;
+
+        // Update KPI
+        document.getElementById("fnb-kpi-revenue").textContent = formatRupiah(totalRevenue);
+        document.getElementById("fnb-kpi-orders").textContent = totalOrders;
+        document.getElementById("fnb-kpi-orders-paid").textContent = `${paidCount} Lunas`;
+        document.getElementById("fnb-kpi-avg").textContent = formatRupiah(avgPerOrder);
+        document.getElementById("fnb-kpi-top-item").textContent = topItem ? topItem[0] : "-";
+        document.getElementById("fnb-kpi-top-item-count").textContent = `${topItem ? topItem[1].qty : 0}x terjual`;
+
+        // Tabel Rincian Item Terjual
+        let itemsTableHTML = "";
+        sortedItems.forEach(([nama, info]) => {
+          itemsTableHTML += `
+                    <tr class="hover:bg-gray-800/30 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-200">${nama}</td>
+                        <td class="px-6 py-4 text-gray-300">${info.qty}</td>
+                        <td class="px-6 py-4 font-semibold text-white">${formatRupiah(info.revenue)}</td>
+                    </tr>
+                `;
+        });
+        document.getElementById("fnb-items-table-body").innerHTML =
+          itemsTableHTML ||
+          '<tr><td colspan="3" class="text-center py-8 text-gray-500 italic">Belum ada item terjual pada periode ini</td></tr>';
+
+        // Tabel Riwayat Pesanan F&B
+        const sortedOrders = [...pesananFnb].sort((a, b) => {
+          const dateA =
+            getWIBShifted(
+              getFlexibleValue(a, ["waktu", "waktumulai", "timestamp", "waktudibuat"]),
+            ) || new Date(0);
+          const dateB =
+            getWIBShifted(
+              getFlexibleValue(b, ["waktu", "waktumulai", "timestamp", "waktudibuat"]),
+            ) || new Date(0);
+          return dateB - dateA;
+        });
+
+        let ordersTableHTML = "";
+        sortedOrders.slice(0, 20).forEach((p) => {
+          const idRaw = getFlexibleValue(p, ["idpesananfnb", "idpesanan", "id"]);
+          const id = idRaw ? String(idRaw).trim() : "-";
+
+          const totalRaw = getFlexibleValue(p, ["total", "totalbayar", "nominal"]);
+          const total = parseFloat(totalRaw || 0);
+
+          const statusRaw = getFlexibleValue(p, ["status", "statusbayar"]);
+          const status = statusRaw ? String(statusRaw).trim() : "Pending";
+          const statusLower = status.toLowerCase();
+
+          const dateRaw = getFlexibleValue(p, [
+            "waktu",
+            "waktumulai",
+            "timestamp",
+            "waktudibuat",
+          ]);
+          const pDate = dateRaw ? getWIBShifted(dateRaw) : null;
+
+          let statusColor = "text-yellow-400 bg-yellow-400/10 border-yellow-400/30";
+          if (statusLower === "paid" || statusLower === "sukses" || statusLower === "selesai")
+            statusColor = "text-green-400 bg-green-400/10 border-green-400/30";
+          if (statusLower === "failed" || statusLower === "expire" || statusLower === "cancel")
+            statusColor = "text-red-400 bg-red-400/10 border-red-400/30";
+
+          ordersTableHTML += `
+                    <tr class="hover:bg-gray-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-200">${id}</div>
+                            <div class="text-xs text-gray-500">${formatDateTime(pDate)}</div>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-white">${formatRupiah(total)}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full border ${statusColor}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+        });
+        document.getElementById("fnb-trx-table-body").innerHTML =
+          ordersTableHTML ||
+          '<tr><td colspan="3" class="text-center py-8 text-gray-500 italic">Belum ada pesanan F&B pada periode ini</td></tr>';
+
+        renderFnbCharts(dailyRevenue, sortedItems);
+      }
+
+      function renderFnbCharts(dailyRevenue, sortedItems) {
+        Chart.defaults.color = "#9ca3af";
+        Chart.defaults.font.family = "'Poppins', sans-serif";
+
+        // 1. Chart Line (Tren Pendapatan F&B)
+        const ctxFnbRev = document.getElementById("fnbRevenueChart").getContext("2d");
+        if (chartInstances["fnbRevenue"]) chartInstances["fnbRevenue"].destroy();
+
+        const sortedKeys = Object.keys(dailyRevenue)
+          .sort((a, b) => a.localeCompare(b))
+          .slice(-7);
+        const revenues = sortedKeys.map((k) => dailyRevenue[k]);
+
+        const displayLabels = sortedKeys.map((k) => {
+          if (k === "-") return k;
+          const parts = k.split("-");
+          const months = [
+            "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+            "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+          ];
+          return `${parts[2]} ${months[parseInt(parts[1]) - 1]}`;
+        });
+
+        const gradientOrange = ctxFnbRev.createLinearGradient(0, 0, 0, 400);
+        gradientOrange.addColorStop(0, "rgba(249, 115, 22, 0.5)");
+        gradientOrange.addColorStop(1, "rgba(249, 115, 22, 0.0)");
+
+        chartInstances["fnbRevenue"] = new Chart(ctxFnbRev, {
+          type: "line",
+          data: {
+            labels: displayLabels.length > 0 ? displayLabels : ["Belum ada data"],
+            datasets: [
+              {
+                label: "Pendapatan F&B (Rp)",
+                data: revenues.length > 0 ? revenues : [0],
+                borderColor: "#f97316",
+                backgroundColor: gradientOrange,
+                borderWidth: 3,
+                pointBackgroundColor: "#9a3412",
+                pointBorderColor: "#f97316",
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "rgba(17, 24, 39, 0.9)",
+                titleColor: "#fff",
+                bodyColor: "#fff",
+                borderColor: "#374151",
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                  label: function (context) {
+                    return formatRupiah(context.raw);
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                grid: { color: "rgba(75, 85, 99, 0.2)" },
+                ticks: {
+                  callback: function (value) {
+                    if (value >= 1000000) return "Rp " + (value / 1000000).toFixed(1) + "M";
+                    if (value >= 1000) return "Rp " + (value / 1000).toFixed(0) + "K";
+                    return "Rp " + value;
+                  },
+                },
+              },
+              x: { grid: { display: false } },
+            },
+          },
+        });
+
+        // 2. Chart Bar (Top 5 Menu Terlaris)
+        const ctxItems = document.getElementById("fnbItemsChart").getContext("2d");
+        if (chartInstances["fnbItems"]) chartInstances["fnbItems"].destroy();
+
+        const top5 = sortedItems.slice(0, 5);
+        const itemLabels = top5.map(([nama]) => nama);
+        const itemData = top5.map(([, info]) => info.qty);
+
+        chartInstances["fnbItems"] = new Chart(ctxItems, {
+          type: "bar",
+          data: {
+            labels: itemLabels.length > 0 ? itemLabels : ["Belum ada data"],
+            datasets: [
+              {
+                label: "Qty Terjual",
+                data: itemData.length > 0 ? itemData : [0],
+                backgroundColor: ["#f97316", "#3b82f6", "#8b5cf6", "#10b981", "#ef4444"],
+                borderRadius: 6,
+                barThickness: 20,
+              },
+            ],
+          },
+          options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: "rgba(17, 24, 39, 0.9)",
+                padding: 10,
+              },
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: { precision: 0 },
+                grid: { color: "rgba(75, 85, 99, 0.2)" },
+              },
+              y: { grid: { display: false } },
             },
           },
         });
