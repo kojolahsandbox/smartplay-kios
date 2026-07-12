@@ -279,6 +279,12 @@ export default function App() {
           >
             Admin
           </button>
+          <button
+            onClick={() => (window.location.href = "/fnb.html")}
+            className="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-sm md:text-base font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300"
+          >
+            Makanan/Minuman
+          </button>
         </div>
       </nav>
 
